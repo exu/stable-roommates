@@ -63,7 +63,7 @@ class StableRoommate
      */
     public function reject($person, $chosen)
     {
-        $this->rejections[$person][] = $person;
+        $this->rejections[$person][] = $chosen;
         $key = array_search($chosen, $this->preferences[$person]);
         $this->preferences[$person][$key] = null;
     }
@@ -106,7 +106,6 @@ class StableRoommate
         $this->proposals[$person][] = $chosen;
         $this->proposed[$chosen] = $person;
         echo "Person $chosen accepting $person\n";
-        $this->rejectWeakest($person);
     }
 
     /**
@@ -132,6 +131,10 @@ class StableRoommate
             $hasBetterProposalThan = $previousRank < $currentRank;
 
             echo "Person $chosen " . ($hasBetterProposalThan ? "has": "has't") . " better proposal than $person ($previousRank < $currentRank) \n";
+
+            if (!$hasBetterProposalThan) {
+                $this->reject($person, $previous);
+            }
 
             return $hasBetterProposalThan;
         } else {
@@ -207,28 +210,54 @@ class StableRoommate
         }
     }
 
+    public function printProposals()
+    {
+
+        echo "\n";
+        foreach ($this->getProposals() as $person => $proposals) {
+            echo "$person:\t";
+            foreach ($proposals as $proposal) {
+                echo ($proposal ? $proposal : "❌      ") . "\t\t";
+            }
+            echo "\n";
+        }
+    }
+
+
+    public function proposeUntilSuccess($person, $personProposals, $level = 1)
+    {
+        if (!isset($personProposals[$level])) {
+            return false;
+        }
+
+        $accepted = $this->propose($person, $personProposals[$level]);
+
+        if (!$accepted) {
+            return $this->proposeUntilSuccess($person, $personProposals, $level+1);
+        }
+    }
+
+
     /**
      * Run run run
      */
     public function runPhase1()
     {
-        echo "--------------------------------\n";
         $proposals = $this->getProposals();
-        fwrite(STDERR, print_r($this->proposed, 1) . "\n");
 
         $level = 0;
         foreach ($proposals as $person => $personProposals) {
+            echo "\n";
             if (isset($personProposals[$level])) {
-                $this->propose($person, $personProposals[$level]);
-                fwrite(STDERR, print_r($this->proposed, 1) . "\n");
-
+                $this->proposeUntilSuccess($person, $personProposals);
             }
+
+            $this->printProposals();
         }
-        $level++;
 
-        fwrite(STDERR, print_r($this->getProposals(), 1) . "\n");
+        fwrite(STDERR, print_r($this->proposed, 1) . "\n");
+        echo "<PRE>" . print_r($this->rejections, 1) . "</PRE>";
 
-        return $level;
     }
 
 

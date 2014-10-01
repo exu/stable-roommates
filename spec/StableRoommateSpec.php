@@ -119,6 +119,27 @@ class StableRoommateSpec extends ObjectBehavior
 
     function it_runs()
     {
-        $this->runPhase1()->shouldReturn(3);
+        $this->beConstructedWith([
+            "person1" => ["person3",   "person4",   "person2",   "person6",   "person5"],
+            "person2" => ["person6",   "person5",   "person4",   "person1",   "person3"],
+            "person3" => ["person2",   "person4",   "person5",   "person1",   "person6"],
+            "person4" => ["person5",   "person2",   "person3",   "person6",   "person1"],
+            "person5" => ["person3",   "person1",   "person2",   "person4",   "person6"],
+            "person6" => ["person5",   "person1",   "person3",   "person4",   "person2"],
+        ]);
+
+
+
+
+        $this->runPhase1();
+
+        $this->getProposals()->shouldReturn([
+            "person1" => [null,        "person4",   "person2",   "person6",   null,    ],
+            "person2" => ["person6",   "person5",   "person4",   "person1",   "person3"],
+            "person3" => ["person2",   "person4",   "person5",    null,       "person6"],
+            "person4" => ["person5",   "person2",   "person3",   "person6",   "person1"],
+            "person5" => ["person3",   null,        "person2",   "person4",   null     ],
+            "person6" => [null,        "person1",   null,        "person4",   "person2"],
+        ]);
     }
 }
